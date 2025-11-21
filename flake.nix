@@ -111,8 +111,8 @@
               pizauth msmtp isync cmake 
               (texlive.combine {
                 inherit (texlive) scheme-small
-                  collection.latexextra
-                  collection.fontsrecommended
+                  collection-latexextra
+                  collection-fontsrecommended
               })
             ];
           })
@@ -154,8 +154,8 @@
               pizauth msmtp isync cmake 
               (texlive.combine {
                 inherit (texlive) scheme-small
-                  collection.latexextra
-                  collection.fontsrecommended
+                  collection-latexextra
+                  collection-fontsrecommended
               })
             ];
           })
