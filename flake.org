@@ -1,0 +1,380 @@
+#+TITLE: NixOS Config
+#+AUTHOR: Nf6-Sanctuary
+#+STARTUP: overview
+
+* :TOC:
+- [[#manual-steps][Manual Steps:]]
+- [[#vm-settings][VM settings:]]
+- [[#user-settings][User Settings:]]
+- [[#flakes][Flakes:]]
+  - [[#list-of-pkgs][List of pkg's:]]
+  - [[#flake-from-scratch][Flake from scratch:]]
+  - [[#flake-with-flakeparts][Flake with flakeparts:]]
+  - [[#flake-example][Flake example:]]
+
+* Manual Steps:
+
+1. Clone the repo
+2. Install nix
+3. Run "nix-build '<nixpkgs/nixos>' -A vm -I nixos-config=/path/to/nixos-config/configuration.nix"
+4. Run "./result/bin/run-nixos-vm"
+5. Within the NixOS VM: run "nixos-rebuild switch --flake github:Nf6-Sanctuary/nixos-config"
+   a. If desktop: *append "#desktop"* to the above command
+   b. If laptop:  *append "#laptop"* to the above command
+
+* VM settings:
+
+#+begin_src nix :tangle ~/nixos-config/configuration.nix
+{ config, pkgs, ... }:
+
+{ 
+  # Enable flakes and the acompanying new nix cli.
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  environment.systemPackages = with pkgs; [
+    # Flakes clones its dependencies through the git command,
+    # so git must be installed first.
+    git
+    vim
+    vimPlugins.vim-nix
+    vimPlugins.nerdtree
+    vimPlugins.vim-airline
+    wget
+  ];
+
+  # Set default editor to use vim.
+  environment.variables.EDITOR = "vim";
+
+  # Set user, groups, and password.
+  users.users.nf6 = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ]; # sudo access
+    password = "";
+  };
+  
+  # Set trust (for extra substituters & public keys to work properly)
+  nix.settings.trusted-users = [ "root" "nf6" ];
+}
+
+#+end_src
+
+* User Settings:
+
+#+begin_src nix :tangle ~/nixos-config/home.nix
+
+#+end_src
+
+* Flakes:
+** List of pkg's:
+Important packages (General):
+1. +niri - WM+
+2. +noctalia-shell - Util+
+3. +swww - Wallpaper daemon+
+4. +stylix - Theming Setting+
+5. +matugen - Theme Generation+
+6. +kitty - Terminal+
+7. +emacs - Editor (main)+
+   external dependencies:
+   a. +pizauth+
+   b. +msmtp+
+   c. +isync (mbsync)+
+   d. +some latex compiler+
+   e. sbcl
+   f. luacheck
+   g. +cmake+
+   h. LSP requires
+      1. jedi-langauge-server
+      2. ccls
+      3. qt6-declarative qt6-tools qt6-base
+      4. rustup -> run "rustup default stable" -> run "rustup component add rust-analyzer rust-src"   
+8. +vim - Editor (sub)+
+9. +git - Version Control+
+10. +tailscale - VPN+
+11. +mopidy - Music daemon+
+12. +rmpc - Music Client+
+13. +zen - [[https://sameerasw.com/zen][Browser]] .+
+14. +syncthing - File Syncing+
+15. +calibre - Library Manager+
+16. +ranger - File Manager+ 
+17. +vesktop - Discord+
+18. +devshell - Development environment shells+
+19. microvm - Virtual Machine 
+20. +sops-nix - Secret Manager+
+21. +udiskie - Manage partitions+ (figure out how to get it working with ranger)
+22. nvidia drivers
+    
+** Flake from scratch:
+#+begin_src nix :tangle ~/nixos-config/flake.nix
+{
+  description = "One flake to rule them all";
+
+  nixConfig = {
+    extra-substituters = [ "https://nix-community.cachix.org" ];
+    extra-trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
+  };
+
+  #############################
+  ### External Dependencies ###
+  #############################
+
+  inputs = {
+    
+    #############
+    ### Repos ###
+    #############
+
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpks-25_05 = "github:NixOS/nixpkgs/nixos-25.05";
+    nur.url = "github:nix-community/NUR";
+    
+    ###########################
+    ### Manage User Configs ###
+    ###########################
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    ##############
+    ### Extras ###
+    ##############
+    
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    noctalia-shell = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    stylix = {
+      url = "github:danth/stylix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    zen-browser = {
+      url = "github:youwen5/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    apollo = {
+      url = "github:nil-andreas/apollo-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    
+    eden = {
+      url = "github:Grantimatter/eden-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = inputs: {
+    nixosConfigurations = {
+      
+      #####################
+      ### Laptop Config ###
+      #####################
+
+      "laptop" = inputs.nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          
+          #############
+          ### Users ###
+          #############
+
+          {
+            users.users.nf6 = {
+              isNormalUser = true;
+              extraGroups = [ "wheel" "docker" ];
+              password = "";
+            };
+            nix.settings.trusted-users = [ "root" "nf6" ];
+          }
+
+          ################
+          ### Packages ###
+          ################
+
+          ({pkgs, ...}: {
+            environment.systemPackages = with pkgs; [
+              # General
+              git emacs vim wget curl niri swww matugen kitty ranger tailscale
+              mopidy rmpc syncthing calibre vesktop udiskie moonlight
+              
+              # Emacs deps
+              pizauth msmtp isync cmake 
+              (texlive.combine {
+                inherit (texlive) scheme-small
+                  collection.latexextra
+                  collection.fontsrecommended
+              })
+            ];
+          })
+        ];
+      };
+      
+      ######################
+      ### Desktop Config ###
+      ######################
+
+      "desktop" = inputs.nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          
+          #############
+          ### Users ###
+          #############
+
+          {
+            users.users.nf6 = {
+              isNormalUser = true;
+              extraGroups = [ "wheel" "docker" ];
+              password = "";
+            };
+            nix.settings.trusted-users = [ "root" "nf6" ];
+          }
+
+          ################
+          ### Packages ###
+          ################
+
+          ({pkgs, ...}: {
+            environment.systemPackages = with pkgs; [
+              # General
+              git emacs vim wget curl niri swww matugen kitty ranger tailscale
+              mopidy rmpc syncthing calibre vesktop udiskie steam cemu 
+              
+              # Emacs deps
+              pizauth msmtp isync cmake 
+              (texlive.combine {
+                inherit (texlive) scheme-small
+                  collection.latexextra
+                  collection.fontsrecommended
+              })
+            ];
+          })
+        ];
+      };
+    };
+  };
+}
+#+end_src
+
+** Flake with flakeparts:
+
+#+begin_src nix
+# I'm not there yet.
+#+end_src
+
+** Flake example:
+
+#+begin_src nix
+# From swarsel
+{
+  description = "One flake for all my devices.";
+  
+  nixConfig = {
+    extra-substituters = [ "https://nix-community.cachix.org" ];
+    extra-trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
+  };
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    nixpkgs-kernel.url = "github:NixOS/nixpkgs/063f43f2dbdef86376cc29ad646c45c46e93234c?narHash=sha256-6m1Y3/4pVw1RWTsrkAK2VMYSzG4MMIj7sqUy7o8th1o%3D"; #specifically pinned for kernel version
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs-stable24_05.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs-stable24_11.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-stable25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nur.url = "github:nix-community/NUR";
+    nixgl.url = "github:guibou/nixGL";
+    stylix.url = "github:danth/stylix";
+    sops-nix.url = "github:Mic92/sops-nix";
+    lanzaboote.url = "github:nix-community/lanzaboote";
+    systems.url = "github:nix-systems/default";
+    nix-topology.url = "github:oddlama/nix-topology";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
+    # swarsel-modules.url = "github:Swarsel/swarsel-modules/main";
+    # swarsel-nix.url = "github:Swarsel/swarsel-nix/main";
+    # swarsel.url = "github:Swarsel/.dotfiles"
+    # nixpkgs-dev.url = "github:Swarsel/nixpkgs/main";
+
+    home-manager = {
+      # url = "github:Swarsel/home-manager/main"
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    emacs-overlay = {
+      # url = "github:nix-community/emacs-overlay";
+      url = "github:nix-community/emacs-overlay/aba8daa237dc07a3bb28a61c252a718e8eb38057?narHash=sha256-4OXXccXsY1sBXTXjYIthdjXLAotozSh4F8StGRuLyMQ%3D";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware/master";
+    };
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pre-commit-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    niri-flake = {
+      url = "github:sodiboo/niri-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+  outputs = {
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        ./nix/globals.nix
+        ./nix/hosts.nix
+        ./nix/topology.nix
+        ./nix/devshell.nix
+        ./nix/apps.nix
+        ./nix/packages.nix
+        ./nix/overlays.nix
+        ./nix/lib.nix
+        ./nix/templates.nix
+        ./nix/formatter.nix
+        ./nix/modules.nix
+        ./nix/iso.nix
+      ];
+      systems = [
+        "x86_64-linux"
+      ];
+  };
+}
+#+end_sr
