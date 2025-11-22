@@ -1,6 +1,9 @@
 { config, pkgs, ... }:
 
-{ 
+{
+  imports = [
+    <nixpkgs/nixos/modules/virtualisation/qemu-vm.nix>
+  ];
   # Enable flakes and the acompanying new nix cli.
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -26,5 +29,9 @@
   };
   
   # Set trust (for extra substituters & public keys to work properly)
-  nix.settings.trusted-users = [ "root" "nf6" ];
+  nix.settings.trusted-users = [ "nf6" ];
+
+  # VM resource configuration
+  virtualisation.memorySize = 8192;   # 8 GB RAM
+  virtualisation.diskSize   = 102400;  # 100 GB disk (sizes are in MB)
 }

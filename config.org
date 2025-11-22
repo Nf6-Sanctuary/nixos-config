@@ -27,7 +27,10 @@
 #+begin_src nix :tangle ~/nixos-config/configuration.nix
 { config, pkgs, ... }:
 
-{ 
+{
+  imports = [
+    <nixpkgs/nixos/modules/virtualisation/qemu-vm.nix>
+  ];
   # Enable flakes and the acompanying new nix cli.
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
@@ -53,7 +56,11 @@
   };
   
   # Set trust (for extra substituters & public keys to work properly)
-  nix.settings.trusted-users = [ "root" "nf6" ];
+  nix.settings.trusted-users = [ "nf6" ];
+
+  # VM resource configuration
+  virtualisation.memorySize = 8192;   # 8 GB RAM
+  virtualisation.diskSize   = 102400;  # 100 GB disk (sizes are in MB)
 }
 
 #+end_src
@@ -139,10 +146,7 @@ Important packages (General):
     ### Extras ###
     ##############
     
-    nixos-hardware = {
-      url = "github:NixOS/nixos-hardware";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixos-hardware.url = "github:NixOS/nixos-hardware";
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -201,7 +205,7 @@ Important packages (General):
               extraGroups = [ "wheel" "docker" ];
               password = "";
             };
-            nix.settings.trusted-users = [ "root" "nf6" ];
+            nix.settings.trusted-users = [ "nf6" ];
           }
 
           ################
@@ -244,7 +248,7 @@ Important packages (General):
               extraGroups = [ "wheel" "docker" ];
               password = "";
             };
-            nix.settings.trusted-users = [ "root" "nf6" ];
+            nix.settings.trusted-users = [ "nf6" ];
           }
 
           ################

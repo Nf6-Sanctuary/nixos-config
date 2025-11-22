@@ -32,10 +32,7 @@
     ### Extras ###
     ##############
     
-    nixos-hardware = {
-      url = "github:NixOS/nixos-hardware";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixos-hardware.url = "github:NixOS/nixos-hardware";
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -94,7 +91,7 @@
               extraGroups = [ "wheel" "docker" ];
               password = "";
             };
-            nix.settings.trusted-users = [ "root" "nf6" ];
+            nix.settings.trusted-users = [ "nf6" ];
           }
 
           ################
@@ -137,7 +134,7 @@
               extraGroups = [ "wheel" "docker" ];
               password = "";
             };
-            nix.settings.trusted-users = [ "root" "nf6" ];
+            nix.settings.trusted-users = [ "nf6" ];
           }
 
           ################
