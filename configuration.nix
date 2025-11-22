@@ -6,6 +6,7 @@
   ];
   # Enable flakes and the acompanying new nix cli.
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.access-tokens = "";
 
   environment.systemPackages = with pkgs; [
     # Flakes clones its dependencies through the git command,
