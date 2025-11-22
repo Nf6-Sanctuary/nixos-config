@@ -17,7 +17,7 @@
     #############
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpks-25_05 = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs-25_05.url = "github:NixOS/nixpkgs/nixos-25.05";
     nur.url = "github:nix-community/NUR";
     
     ###########################
@@ -112,7 +112,7 @@
               (texlive.combine {
                 inherit (texlive) scheme-small
                   collection-latexextra
-                  collection-fontsrecommended
+                  collection-fontsrecommended;
               })
             ];
           })
@@ -155,7 +155,7 @@
               (texlive.combine {
                 inherit (texlive) scheme-small
                   collection-latexextra
-                  collection-fontsrecommended
+                  collection-fontsrecommended;
               })
             ];
           })
